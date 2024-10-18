@@ -7,20 +7,12 @@ import { injected } from 'wagmi/connectors';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { shortAccount } from '../hook/shortAccount';
 
-// const client = createPublicClient({
-//   client: foundry,
-//   transport: http('http://127.0.0.1:8545'),
-// });
-
-// const CONTRACT_ADDRESS = '0x5FbDB2315678afecb367f032d93F642f64180aa3';
-
 export const NavBar = () => {
   const navBack = useRef(false);
   const trigger = useScrollTrigger({
     disableHysteresis: true,
     threshold: 50,
   });
-
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const { connect } = useConnect();

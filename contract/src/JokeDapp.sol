@@ -58,16 +58,26 @@ contract JokeDapp {
         _;
     }
 
+    // update the jokeEndTime
+    function updateJokeEndTime(
+        uint256 _updateJokeEndTime
+    ) public onlyOwner returns (uint256) {
+        return jokeEndTime += _updateJokeEndTime;
+    }
+    // update entryFees
+    function updateEntryFees(uint256 _updateEntryFee) public returns (uint256) {
+        return entryFees += _updateEntryFee;
+    }
     // Pay the entry fees
-    function payEntryFees() public payable {
-        require(msg.value == entryFees, "Incorrect entry fee");
+    function payEntryFees(uint256 fees) public payable {
+        require(fees >= entryFees, "Incorrect entry fee");
         require(!hasPaidEntryFees[msg.sender], "Entry fee already paid");
 
         // Mark the user as having paid
         hasPaidEntryFees[msg.sender] = true;
-        rewardPool += msg.value;
+        rewardPool += fees;
 
-        emit EntryFeePaid(msg.sender, msg.value);
+        emit EntryFeePaid(msg.sender, fees);
     }
 
     // Participate in the joke after paying entry fees
@@ -180,7 +190,10 @@ contract JokeDapp {
     function getContractBalance() public view returns (uint256) {
         return address(this).balance;
     }
-
+    // Get all the jokes
+    function getAllJokes() public view returns (Joke[] memory) {
+        return jokes;
+    }
     receive() external payable {
         rewardPool += msg.value;
     }

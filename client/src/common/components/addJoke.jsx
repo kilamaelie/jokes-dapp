@@ -4,20 +4,22 @@ import Grid from '@mui/material/Grid2';
 import {
   Typography,
   Radio,
-  Checkbox,
   RadioGroup,
   FormControlLabel,
   Button,
   TextField,
 } from '@mui/material';
+import { useWriteContract } from 'wagmi';
+import abi from '../../lib/JokeDappABI.json';
+import { LoadingButton } from '@mui/lab';
 
-export const AddJoke = ({}) => {
+export const AddJoke = ({ close, refetchAllJoke }) => {
   const [question, setQuestion] = useState(''); // Question input
   const [answerOptions, setAnswerOptions] = useState(['']); // Dynamic array of answer options
   const [correctAnswerIndex, setCorrectAnswerIndex] = useState(0); // Index of correct answer
   const [isActive, setIsActive] = useState(false); // Boolean for active state
   const maxOptions = 3;
-
+  const { writeContractAsync, isPending } = useWriteContract();
   const handleAddOption = () => {
     if (answerOptions.length < maxOptions) {
       setAnswerOptions([...answerOptions, '']);
@@ -38,16 +40,22 @@ export const AddJoke = ({}) => {
     setAnswerOptions(updatedOptions);
   };
 
-  const handleSubmit = () => {
-    const data = {
-      question,
-      answerOptions,
-      correctAnswerIndex,
-      isActive,
-    };
-    console.log(data);
+  const handleSubmit = async () => {
+    const data = await writeContractAsync({
+      abi: abi,
+      address: `${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS}`,
+      functionName: 'addJoke',
+      args: [question, answerOptions, correctAnswerIndex],
+    });
+
+    if (data) {
+      close();
+      refetchAllJoke();
+    }
+
     // Here you can send `data` to an API or handle it as needed
   };
+
   return (
     <Grid container direction='column' gap={2}>
       {/* Question Input */}
@@ -129,29 +137,6 @@ export const AddJoke = ({}) => {
         </RadioGroup>
       </Grid>
 
-      {/* Active State Toggle */}
-      <Grid item>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
-              sx={{
-                color: 'black',
-                '&.Mui-checked': {
-                  color: 'green', // Green when checked
-                },
-              }}
-            />
-          }
-          label={
-            <Typography color='black' variant='body2'>
-              Is Active
-            </Typography>
-          }
-        />
-      </Grid>
-
       {/* Submit Button */}
       <Grid item container justifyContent='flex-end' gap={1}>
         <Button
@@ -159,11 +144,15 @@ export const AddJoke = ({}) => {
             color: 'black',
             textTransform: 'capitalize',
           }}
-          onClick={handleSubmit}
+          onClick={() => {
+            handleSubmit();
+            close();
+          }}
         >
           Cancel
         </Button>
-        <Button
+        <LoadingButton
+          loading={isPending}
           disableElevation
           sx={{
             ':hover': {
@@ -174,7 +163,7 @@ export const AddJoke = ({}) => {
           onClick={handleSubmit}
         >
           Submit
-        </Button>
+        </LoadingButton>
       </Grid>
     </Grid>
   );
