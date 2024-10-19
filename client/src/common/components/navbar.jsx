@@ -15,7 +15,7 @@ export const NavBar = () => {
   });
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
-  const { connect } = useConnect();
+  const { connectAsync } = useConnect();
 
   navBack.current = trigger;
 
@@ -70,7 +70,7 @@ export const NavBar = () => {
                 textTransform: 'capitalize',
                 color: '#FFD493',
               }}
-              onClick={() => connect({ connector: injected() })}
+              onClick={() => connectAsync({ connector: injected() })}
             >
               Connect
             </Button>

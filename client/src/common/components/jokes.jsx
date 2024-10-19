@@ -19,10 +19,10 @@ export const Jokes = ({ allJokes, isLoadingAllJokes }) => {
   const [selectedOption, setSelectedOption] = React.useState(null); // Track selected radio option
   const { address } = useAccount();
 
-  const { data: hasParticipanted, refetch } = useReadContract({
+  const { data: hasParticipated, refetch } = useReadContract({
     abi: abi,
     address: `${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS}`,
-    functionName: 'hasParticipanted',
+    functionName: 'hasParticipated',
     args: [address],
   });
 
@@ -60,10 +60,6 @@ export const Jokes = ({ allJokes, isLoadingAllJokes }) => {
     }
   }, [selectedIndex, allJokes]);
 
-  console.log('====================================');
-  console.log(hasParticipanted);
-  console.log('====================================');
-
   return (
     <Paper
       sx={{
@@ -82,7 +78,7 @@ export const Jokes = ({ allJokes, isLoadingAllJokes }) => {
         </Grid>
       ) : (
         <Grid container direction='column' gap={2}>
-          {hasParticipanted ? (
+          {hasParticipated ? (
             <Grid item>
               <Typography align='center' variant='subtitle1' color='black'>
                 You are already participating
@@ -121,7 +117,7 @@ export const Jokes = ({ allJokes, isLoadingAllJokes }) => {
               </Grid>
             </>
           )}
-          {!hasParticipanted && (
+          {!hasParticipated && (
             <Grid item container justifyContent='flex-end' gap={1}>
               <Button
                 disableElevation

@@ -17,6 +17,7 @@ import {
 import { formatEther, parseEther } from 'viem';
 import useTimeFormatter from '../hook/useTimeFormatter';
 import { Jokes } from './jokes';
+import { LoadingButton } from '@mui/lab';
 
 export const MainContent = () => {
   const { address } = useAccount();
@@ -59,21 +60,25 @@ export const MainContent = () => {
     args: [address],
   });
 
-  const { writeContractAsync } = useWriteContract();
+  const { writeContractAsync, isPending: isPendingPayEntryFee } =
+    useWriteContract();
 
   const handlePayEntryFees = async () => {
     if (!address) {
       await connectAsync({ connector: injected() });
     }
 
-    const feesInWei = parseEther(entryFees.toString());
-    await writeContractAsync({
+    const feesInWei = parseEther('0.2');
+    const data = await writeContractAsync({
       address: `${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS}`,
       functionName: 'payEntryFees',
       abi: abi,
-      args: [feesInWei],
+      value: feesInWei,
+      // gasLimit: 3000000,
     });
-    hasPaidRefetch();
+    if (data) {
+      hasPaidRefetch();
+    }
   };
 
   const {
@@ -85,6 +90,19 @@ export const MainContent = () => {
     address: `${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS}`,
     functionName: 'getAllJokes',
   });
+  const { data: balance, isLoading: isLoadingBalance } = useReadContract({
+    abi: abi,
+    address: `${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS}`,
+    functionName: 'getContractBalance',
+  });
+
+  const { writeContractAsync: reward, isPendingReward } = useWriteContract();
+  const { writeContractAsync: Withdrawal, isPendingWithdrawal } =
+    useWriteContract();
+
+  console.log('====================================');
+  console.log(jokeEndTime);
+  console.log('====================================');
 
   return (
     <Grid
@@ -109,7 +127,8 @@ export const MainContent = () => {
               color: '#00DAEF',
             }}
           >
-            Try your luck 😀 🚀
+            Try your luck 😀 🚀, balance:&nbsp;
+            {isLoadingBalance ? 'Loading ...' : formatEther(balance)} ETH
           </Typography>
         </Grid>
         <Grid item>
@@ -133,9 +152,13 @@ export const MainContent = () => {
             {isLoadingEntryFees ? (
               <Typography color='black'>Loading ...</Typography>
             ) : (
-              <Button variant='outlined' onClick={() => handlePayEntryFees()}>
-                Get's start with {formatEther(entryFees)} Eth
-              </Button>
+              <LoadingButton
+                loading={isPendingPayEntryFee}
+                variant='outlined'
+                onClick={() => handlePayEntryFees()}
+              >
+                Get's start with {formatEther(entryFees)} ETH
+              </LoadingButton>
             )}
             {isErrorEntryFees && <Typography>{errorEntryFees}</Typography>}
           </Grid>
@@ -148,13 +171,35 @@ export const MainContent = () => {
           justifyContent='center'
         >
           <Grid item>
-            <Button>Reward</Button>
+            <LoadingButton
+              loading={isPendingReward}
+              onClick={async () =>
+                await reward({
+                  abi: abi,
+                  address: `${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS}`,
+                  functionName: 'claimReward',
+                })
+              }
+            >
+              Reward
+            </LoadingButton>
           </Grid>
 
           {address === owner && (
             <>
               <Grid item>
-                <Button>Withdrawal</Button>
+                <LoadingButton
+                  loading={isPendingWithdrawal}
+                  onClick={async () =>
+                    await Withdrawal({
+                      abi: abi,
+                      address: `${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS}`,
+                      functionName: 'withdrawal',
+                    })
+                  }
+                >
+                  Withdrawal
+                </LoadingButton>
               </Grid>
               <Grid item>
                 <Button

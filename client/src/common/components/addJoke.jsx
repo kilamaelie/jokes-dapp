@@ -17,7 +17,6 @@ export const AddJoke = ({ close, refetchAllJoke }) => {
   const [question, setQuestion] = useState(''); // Question input
   const [answerOptions, setAnswerOptions] = useState(['']); // Dynamic array of answer options
   const [correctAnswerIndex, setCorrectAnswerIndex] = useState(0); // Index of correct answer
-  const [isActive, setIsActive] = useState(false); // Boolean for active state
   const maxOptions = 3;
   const { writeContractAsync, isPending } = useWriteContract();
   const handleAddOption = () => {
@@ -46,6 +45,7 @@ export const AddJoke = ({ close, refetchAllJoke }) => {
       address: `${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS}`,
       functionName: 'addJoke',
       args: [question, answerOptions, correctAnswerIndex],
+      // gasLimit: 3000000,
     });
 
     if (data) {
