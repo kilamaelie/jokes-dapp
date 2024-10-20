@@ -30,6 +30,7 @@ export const MainContent = () => {
     isLoading: isLoadingEntryFees,
     isError: isErrorEntryFees,
     error: errorEntryFees,
+    refetch: refreshEntryFees,
   } = useReadContract({
     abi: abi,
     address: `${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS}`,
@@ -78,6 +79,7 @@ export const MainContent = () => {
     });
     if (data) {
       hasPaidRefetch();
+      refreshEntryFees();
     }
   };
 

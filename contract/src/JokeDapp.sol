@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.10;
 
 contract JokeDapp {
     // Errors
@@ -9,6 +9,7 @@ contract JokeDapp {
     uint256 public entryFees; // in Ether
     uint256 public jokeEndTime; // in seconds
     uint256 public rewardPool;
+    uint256 public ownerPool; // Added to track owner's balance
     address public owner;
     address public lastWinner;
 
@@ -21,7 +22,7 @@ contract JokeDapp {
 
     Joke[] public jokes;
     mapping(address => bool) public hasPaidEntryFees; // Track if the user has paid entry fees
-    mapping(address => bool) public hasParticipanted; // Track if the user has already participated
+    mapping(address => bool) public hasParticipated;
     mapping(address => uint256) public rewards;
 
     // Events
@@ -58,26 +59,34 @@ contract JokeDapp {
         _;
     }
 
-    // update the jokeEndTime
+    // Update the joke end time
     function updateJokeEndTime(
         uint256 _updateJokeEndTime
     ) public onlyOwner returns (uint256) {
         return jokeEndTime += _updateJokeEndTime;
     }
-    // update entryFees
-    function updateEntryFees(uint256 _updateEntryFee) public returns (uint256) {
-        return entryFees += _updateEntryFee;
+
+    // Update entry fees, restricted to owner
+    function updateEntryFees(uint256 _updateEntryFee) public onlyOwner {
+        entryFees = _updateEntryFee;
     }
+
     // Pay the entry fees
-    function payEntryFees(uint256 fees) public payable {
-        require(fees >= entryFees, "Incorrect entry fee");
+    function payEntryFees() public payable {
+        require(msg.value >= entryFees, "Incorrect entry fee");
         require(!hasPaidEntryFees[msg.sender], "Entry fee already paid");
 
         // Mark the user as having paid
         hasPaidEntryFees[msg.sender] = true;
-        rewardPool += fees;
 
-        emit EntryFeePaid(msg.sender, fees);
+        uint256 fee = msg.value;
+        uint256 rewardPortion = (fee * 90) / 100; // 90% goes to the reward pool
+        uint256 ownerPortion = fee - rewardPortion; // 10% goes to the owner
+
+        rewardPool += rewardPortion;
+        ownerPool += ownerPortion; // Track owner's portion separately
+
+        emit EntryFeePaid(msg.sender, msg.value);
     }
 
     // Participate in the joke after paying entry fees
@@ -90,7 +99,7 @@ contract JokeDapp {
             "You must pay the entry fee first"
         );
         require(
-            !hasParticipanted[msg.sender],
+            !hasParticipated[msg.sender],
             "You have already participated in this joke"
         );
         require(
@@ -99,12 +108,13 @@ contract JokeDapp {
         );
 
         // Mark the user as having participated
-        hasParticipanted[msg.sender] = true;
+        hasParticipated[msg.sender] = true;
 
         // Check if the answer is correct
         if (selectedAnswerIndex == jokes[jokeIndex].correctAnswerIndex) {
-            uint256 reward = rewardPool;
-            rewardPool = 0; // Reset reward pool after winner is found
+            uint256 reward = rewardPool; // Send the full reward pool to the winner
+            rewardPool = 0; // Reset reward pool after the winner is found
+
             rewards[msg.sender] = reward;
             lastWinner = msg.sender;
             jokes[jokeIndex].isActive = false;
@@ -115,17 +125,21 @@ contract JokeDapp {
 
     // Claim reward after joke ends
     function claimReward() public jokeEnded {
-        require(rewards[msg.sender] > 0, "No reward to claim");
         uint256 reward = rewards[msg.sender];
+        require(reward > 0, "No reward to claim");
+
         rewards[msg.sender] = 0;
         payable(msg.sender).transfer(reward);
     }
 
     // Withdraw funds by the owner after the joke period ends
     function withdrawal() public onlyOwner jokeEnded {
-        uint256 amount = address(this).balance;
+        uint256 amount = ownerPool; // Withdraw from the owner's pool
         require(amount > 0, "No funds to withdraw");
+
+        ownerPool = 0; // Reset owner's pool after withdrawal
         payable(owner).transfer(amount);
+
         emit Withdrawal(owner, amount);
     }
 
@@ -147,13 +161,14 @@ contract JokeDapp {
                 isActive: true
             })
         );
+
         emit NewJokeAdded(jokes.length - 1, _question);
     }
 
     // Get remaining time for the current joke
     function getRemaindingTime() public view returns (uint256) {
-        if (block.timestamp < jokeEndTime) {
-            return 0;
+        if (block.timestamp >= jokeEndTime) {
+            return 0; // No time left
         } else {
             return jokeEndTime - block.timestamp;
         }
@@ -162,16 +177,7 @@ contract JokeDapp {
     // Get details of a joke
     function getJoke(
         uint256 jokeIndex
-    )
-        public
-        view
-        returns (
-            string memory question,
-            string[] memory answerOptions,
-            uint256 correctAnswerIndex,
-            bool isActive
-        )
-    {
+    ) public view returns (string memory, string[] memory, uint256, bool) {
         Joke memory joke = jokes[jokeIndex];
         return (
             joke.question,
@@ -190,11 +196,14 @@ contract JokeDapp {
     function getContractBalance() public view returns (uint256) {
         return address(this).balance;
     }
+
     // Get all the jokes
     function getAllJokes() public view returns (Joke[] memory) {
         return jokes;
     }
+
+    // Allow the contract to receive funds
     receive() external payable {
-        rewardPool += msg.value;
+        rewardPool += msg.value; // If anyone sends Ether directly to the contract, it goes to the reward pool
     }
 }
