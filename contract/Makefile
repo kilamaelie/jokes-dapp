@@ -20,6 +20,10 @@ deploy:
 deploy-test: 
 	forge script script/DeployJoke.s.sol:DeployJoke --rpc-url $(RPC_URL_LOCAL) --private-key $(LOCAL_PRIVATE_KEY) --broadcast
 
+
+abi:
+	forge inspect JokeDapp abi > /Users/kilama/work/community/jokes-dapp/client/src/lib/JokeDappABI.json
+
 # deploy-sepolia: 
 # 	forge script script/DeployFundMe.s.sol:DeployFundMe --rpc-url $(SEPOLIA_RPC_URL) --private-key $(SEPOLIA_PRIVATE_KEY) --broadcast -vvv
 

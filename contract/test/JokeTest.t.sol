@@ -9,7 +9,7 @@ import "../src/JokeDapp.sol";
 contract JokeTest is Test {
     JokeDapp joke;
     uint256 entreFees = 1 ether;
-    uint256 jokeEndTime = 300;
+    uint256 jokeEndTime = 500;
 
     function setUp() public {
         joke = new JokeDapp(entreFees, jokeEndTime);
