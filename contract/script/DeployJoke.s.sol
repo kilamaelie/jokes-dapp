@@ -6,7 +6,7 @@ import {JokeDapp} from "../src/JokeDapp.sol";
 
 contract DeployJoke is Script {
     JokeDapp joke;
-    uint256 entryFees = 0.2 ether;
+    uint256 entryFees = 0.02 ether;
     uint256 jokeEndTime = 500;
     function run() external returns (JokeDapp) {
         vm.startBroadcast();

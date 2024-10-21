@@ -102,10 +102,6 @@ export const MainContent = () => {
   const { writeContractAsync: Withdrawal, isPendingWithdrawal } =
     useWriteContract();
 
-  console.log('====================================');
-  console.log(jokeEndTime);
-  console.log('====================================');
-
   return (
     <Grid
       item
